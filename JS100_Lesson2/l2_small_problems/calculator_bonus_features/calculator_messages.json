@@ -1,0 +1,26 @@
+{
+"en": {
+"greet": "Welcome to the calculator!",
+"yesOrNo": "A simple 'y' or 'n' will do...",
+"number1": "What is the first number?",
+"numNotValid": "Hmm... that doesn't look like a valid number.",
+"number2": "What is the second number?",
+"chooseOperator": "What operation would you like to perform? \n1 for addition \n2 for subtraction \n3 for multiplication \n4 for division",
+"correctOperator": "Must choose 1, 2, 3 or 4",
+"anotherCalculation": "Would you like to perform another calculation?\n=> Enter y for yes\n=> Enter n for no",
+"thanks": "Thank you for using calculator! Have a nice day.",
+"result": "The result is :"
+},
+"ru":  {
+  "greet": "Добро пожаловать в калькулятор!",
+   "yesOrNo": "Простое 'y' или 'n' подойдет...",
+  "number1": "Какое первое число?",
+  "numNotValid": "Хм... это не похоже на действительное число",
+  "number2": "Какое второе число?",
+  "chooseOperator": "Какую операцию вы хотели бы выполнить?\n1 для добавления \n2 для вычитания \n3 для умножения \n4 для разделения",
+  "correctOperator": "Необходимо выбрать 1, 2, 3 или 4",
+  "anotherCalculation": "Вы хотели бы выполнить другой расчет?\n=> введите y для Да\n=> вводим  n на нет",
+  "thanks": "Спасибо за калькулятор! Хорошего дня.",
+  "result": "Результат таков : "
+}
+}

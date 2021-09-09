@@ -1,0 +1,19 @@
+
+  {
+  "welcome": "Welcome to the loan calculator",
+  "principle": "Please enter the principle amount of the loan.",
+  "invalidAmount": "Unfortunately the amount you entered was not valid. \n=> Please try again.",
+  "enterYears": "Please enter the duration of the loan in years. \n=> If months only, please enter 0.",
+  "invalidYears": "Invalid Entry. \n=>Please enter a valid time in years. If months only, please enter 0",
+  "enterMonths": " Please enter the loan duration in months. If years only, please enter 0",
+  "invalidMonths": "Invalid entry. \n=> Please enter a valid time in months. If years only, please enter 0",
+  "yesOrNo": "Simply enter 'y' for another calculation or 'n' to exit.",
+  "zeroTime": "Unable to calculate a loan without a specified time length.",
+  "thankYou": "Thank you for using the loan calculator! \n=> Have a great day!",
+  "anotherLoan": "Would you like to calculate another loan? 'y' to calculate 'n' to exit.",
+  "getInterest": "Please enter the annual interest rate",
+  "invalidInterest": "Invalid entry. \n=> Please enter a valid annual interest rate EX: 5, 5.5 ",
+  "interestZero": "Are you sure your interest rate is 0.0? 'y' if you're sure, 'n' to change your rate.",
+  "paymentMessage": "Congratulations! Your monthly payment will be $",
+  "yesOrNoInterest": "A simple 'y' or 'n' will do"
+}
