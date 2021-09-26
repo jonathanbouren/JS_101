@@ -2,10 +2,13 @@ const readline = require('readline-sync');
 const INITIAL_MARKER = ' ';
 const HUMAN_MARKER = 'X';
 const COMP_MARKER = 'O';
+const PLAYER = ' Player ';
+const COMPUTER = 'Computer';
+const EVERYONE = 'Everyone';
 const WINNING_LINES = [
   [1, 2, 3], [4, 5, 6], [7, 8, 9],
   [1, 4, 7], [2, 5, 8], [3, 6, 9],
-  [1, 5, 9], [3, 5, 7]];
+  [1, 5, 9], [3, 5, 7], [7, 5, 3]];
 const YES_NO = ['y', 'n'];
 
 function prompt(message) {
@@ -14,31 +17,43 @@ function prompt(message) {
 
 const SCORES = [
   ['Player :', 0],
-  [' Computer :', 0]
+  [' Computer :', 0],
+  [' Tie :', 0]
 ];
 
-function displayScores(array) {
+function makeReadableScores(array) {
   return array.flat().join('');
 }
+
 function champion(SCORES) {
-  let champion = false;
-  if (SCORES[0][1] === 5) {
-    console.clear();
-    prompt(`Player is the champion!`);
-    champion = true;
-  } else if (SCORES[1][1] === 5) {
-    console.clear();
-    prompt(`Computer is the champion!`);
-    return true;
+  let haveChampion = false;
+  if ((SCORES[0][1] === 1) ||
+    (SCORES[1][1] === 1) ||
+    (SCORES[2][1] === 1)) {
+    haveChampion = true;
   }
-  return champion;
+  return haveChampion;
+}
+
+function whoIsTheChampion(SCORES) {
+  let champ;
+  if (SCORES[0][1] === 1) {
+    champ = PLAYER;
+  } else if (SCORES[1][1] === 1) {
+    champ = COMPUTER;
+  } else if (SCORES[2][1] === 1) {
+    champ = EVERYONE;
+  }
+  return champ;
 }
 
 function countScores(board) {
-  if (detectWinner(board) === 'Player') {
+  if (detectWinner(board) === PLAYER) {
     SCORES[0][1] += 1;
-  } else if (detectWinner(board) === 'Computer') {
+  } else if (detectWinner(board) === COMPUTER) {
     SCORES[1][1] += 1;
+  } else {
+    SCORES[2][1] += 1;
   }
   return SCORES;
 }
@@ -46,11 +61,28 @@ function countScores(board) {
 function displayGameInfo() {
   console.clear();
   prompt(`You are ${HUMAN_MARKER} Computer is ${COMP_MARKER}`);
-  prompt(`The current score is ${displayScores(SCORES)}`);
+  prompt(`The current score is ${makeReadableScores(SCORES)}`);
+  console.log('');
+}
+
+function displayChampion(theChampion) {
+  console.clear();
+  console.log('*******************************');
+  console.log('<         |         |         >');
+  console.log(`<  Congratulations ${theChampion}!! >`);
+  console.log('<_________|_________|_________>');
+  console.log('<         |         |         >');
+  console.log(`<  Thanks |   for   | playing >`);
+  console.log('<_________|_________|_________>');
+  console.log('<         |         |         >');
+  console.log(`<   TIC   |  TAC    |  TOE    >`);
+  console.log('<         |         |         >');
+  console.log('*******************************');
   console.log('');
 }
 
 function displayBoard(board) {
+  console.clear();
   displayGameInfo();
   console.log('*******************************');
   console.log('<         |         |         >');
@@ -65,6 +97,7 @@ function displayBoard(board) {
   console.log('*******************************');
   console.log('');
 }
+
 
 function initializeBoard() {
   let board = {};
@@ -95,59 +128,43 @@ function playerChoosesSquare(board) {
   }
   board[square] = HUMAN_MARKER;
 }
+function findAtRiskSquare(line, board, marker) {
+  let markersInLine = line.map(square => board[square]);
+
+  if (markersInLine.filter(val => val === marker).length === 2) {
+    let unusedSquare = line.find(square => board[square] === INITIAL_MARKER);
+    if (unusedSquare !== undefined) {
+      return unusedSquare;
+    }
+  }
+
+  return null;
+}
+function getRandomSquare(board) {
+  let randomIndex = Math.floor(Math.random() * emptySquares(board).length);
+  let square = emptySquares(board)[randomIndex];
+  return square;
+}
 
 function computerChoosesSquare(board) {
-  try {
-    compDefenseOpenSq(board);
-    compDefenseBlockedSq(board);
-  } finally {
-    let randomIndex = Math.floor(Math.random() * emptySquares(board).length);
-    let square = emptySquares(board)[randomIndex];
-    board[square] = COMP_MARKER;
-  }
-}
-// function computerDefense(board) {
-//   for (let line = 0; line < WINNING_LINES.length; line++) {
-//     let [sq1, sq2, sq3] = WINNING_LINES[line];
-//     return null;
-//   }
-// }
-function compDefenseOpenSq(board) {
-  for (let line = 0; line < WINNING_LINES.length; line++) {
-    let [sq1, sq2, sq3] = WINNING_LINES[line];
-    switch ([board[sq1], board[sq2], board[sq3]]) {
-      case [HUMAN_MARKER, HUMAN_MARKER, INITIAL_MARKER]:
-        board[sq3] = COMP_MARKER;
-        break;
-      case [HUMAN_MARKER, INITIAL_MARKER, HUMAN_MARKER]:
-        board[sq2] = COMP_MARKER;
-        break;
-      case [INITIAL_MARKER, HUMAN_MARKER, HUMAN_MARKER]:
-        board[sq1] = COMP_MARKER;
-        break;
-      default:
-        break;
+  let square;
+  for (let index = 0; index < WINNING_LINES.length; index++) {
+    let line = WINNING_LINES[index];
+    square = findAtRiskSquare(line, board, COMP_MARKER);
+    if (square) break;
+    if (!square) {
+      square = findAtRiskSquare(line, board, HUMAN_MARKER);
+      if (square) break;
     }
   }
-}
-function compDefenseBlockedSq(board) {
-  for (let line = 0; line < WINNING_LINES.length; line++) {
-    let [sq1, sq2, sq3] = WINNING_LINES[line];
-    switch ([board[sq1], board[sq2], board[sq3]]) {
-      case [HUMAN_MARKER, HUMAN_MARKER, COMP_MARKER]:
-        board[5] = COMP_MARKER;
-        break;
-      case [HUMAN_MARKER, COMP_MARKER, HUMAN_MARKER]:
-        board[5] = COMP_MARKER;
-        break;
-      case [COMP_MARKER, HUMAN_MARKER, HUMAN_MARKER]:
-        board[5] = COMP_MARKER;
-        break;
-      default:
-        break;
-    }
+  if (!square && board[5] === INITIAL_MARKER) {
+    square = 5;
+  } else if (!square && board[5] !== INITIAL_MARKER) {
+    square = getRandomSquare(board);
   }
+  board[square] = COMP_MARKER;
 }
+
 
 function boardFull(board) {
   return emptySquares(board).length === 0;
@@ -161,17 +178,15 @@ function detectWinner(board) {
   for (let line = 0; line < WINNING_LINES.length; line++) {
     let [sq1, sq2, sq3] = WINNING_LINES[line];
     if (
-      board[sq1] === HUMAN_MARKER &&
-      board[sq2] === HUMAN_MARKER &&
+      board[sq1] === HUMAN_MARKER && board[sq2] === HUMAN_MARKER &&
       board[sq3] === HUMAN_MARKER
     ) {
-      return 'Player';
+      return PLAYER;
     } else if (
-      board[sq1] === COMP_MARKER &&
-      board[sq2] === COMP_MARKER &&
+      board[sq1] === COMP_MARKER && board[sq2] === COMP_MARKER &&
       board[sq3] === COMP_MARKER
     ) {
-      return 'Computer';
+      return COMPUTER;
     }
   }
   return null;
@@ -224,25 +239,8 @@ function playAgain() {
   return answer;
 }
 
-function sayGoodbye() {
-  console.clear();
-  if (SCORES[0][1] === 5) {
-    console.clear();
-    prompt("Congratulations to our Champion >>> ::PLAYER::!!!");
-  } else if (SCORES[1][1] === 5) {
-    console.clear();
-    prompt("Congratulations to myself, the champion >>> ::COMPUTER::!!!");
-    return true;
-  }
-  prompt(`Thank you for playing Tic Tac Toe!`);
-  return null;
-}
-
-
 while (true) {
-
   while (!champion(SCORES)) {
-
     let board = initializeBoard();
 
     while (true) {
@@ -261,11 +259,17 @@ while (true) {
     displayWinner(board);
     countScores(board);
   }
+  let theChampion = whoIsTheChampion(SCORES);
+  console.log(theChampion);
+  readline.question();
+  displayChampion(theChampion);
   if (!playAgain()) {
-    sayGoodbye();
     break;
   } else {
     SCORES[0][1] = 0;
     SCORES[1][1] = 0;
+    SCORES[2][1] = 0;
   }
 }
+
+
