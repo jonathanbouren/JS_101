@@ -2,7 +2,8 @@ const readline = require('readline-sync');
 
 let cards = {
   Dealer: [],
-  Player: []
+  Player: [],
+  reveal: false
 };
 let answers = {
   yes: ['y', 'yes', 'yep', 'yeah', 'yup'],
@@ -13,8 +14,8 @@ let allCards = {
   values: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
 };
 let totals = {
-  player: [],
-  dealer: []
+  player: 0,
+  dealer: 0
 };
 let scores = {
   Player: 0,
@@ -33,19 +34,19 @@ function prompt(message) {
 }
 // functions for asking and displaying rules
 
-function askPlayerAboutRules(gameType) {
-  helloPrompt(gameType);
+function askPlayerAboutRules() {
+  helloPrompt();
   prompt('Would you like to see the rules (y or n)');
   let playOrNo = readline.question().trim().toLowerCase();
-  playOrNo = incorrectRulesAnswerLoop(playOrNo);
+  playOrNo = validateRulesAnswer(playOrNo);
   if (playOrNo[0] === 'y') {
     displayRules();
   }
 }
 
-function incorrectRulesAnswerLoop(playOrNo, gameType) {
+function validateRulesAnswer(playOrNo) {
   while (!Object.values(answers).flat().includes(playOrNo)) {
-    helloPrompt(gameType);
+    helloPrompt();
 
     if (playOrNo.startsWith('y')) {
       prompt(`It seems like you might mean 'yes'? Hit 'y' to confirm display rules.`);
@@ -81,8 +82,7 @@ function initializeDeck() {
   }
   return shuffle(deck);
 }
-
-function dealCards(deck) {
+function beforeDealDisplay() {
   console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
   console.log(`$  $  $  $  $  $  Let's Play ${gameType['gameTypeNum']}!  $  $  $  $  $  $`);
   console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
@@ -91,21 +91,55 @@ function dealCards(deck) {
   if (match['count'] > 0) {
     prompt('Current Cards: Player:  [ ] [ ]   Dealer: [ ]  [ ] ');
     console.log('');
-    prompt('Press [ENTER] to deal.');
-    readline.question();
   }
-  for (let cardsToDeal = 2; cardsToDeal > 0; cardsToDeal--) {
-    cards['Player'].push(deck.pop(Math.floor(Math.random() * 52)));
-    cards['Dealer'].push(deck.pop(Math.floor(Math.random() * 52)));
+}
+function dealCards(deck) {
+  beforeDealDisplay();
+  let cardsToDeal, typeOfDeal;
+  if (gameType['gameTypeNum'] === 21) {
+    prompt('Press [ENTER] to deal.');
+    for (let count = 0; count < 2; count++) {
+      cards['Player'].push(deck.pop(Math.floor(Math.random() * 52)));
+      cards['Dealer'].push(deck.pop(Math.floor(Math.random() * 52)));
+    }
+  } else {
+    prompt('Enter [1] for regular deal [2] for bonus deal.');
+    typeOfDeal = Number(readline.question());
+    typeOfDeal = validateDealType(typeOfDeal);
+    dealByType(typeOfDeal, cardsToDeal, deck);
+  }
+}
+function dealByType(typeOfDeal, cardsToDeal, deck) {
+  if (typeOfDeal === 1) {
+    cardsToDeal = 2;
+    for (cardsToDeal; cardsToDeal > 0; cardsToDeal--) {
+      cards['Player'].push(deck.pop(Math.floor(Math.random() * 52)));
+      cards['Dealer'].push(deck.pop(Math.floor(Math.random() * 52)));
+    }
+  } else if (typeOfDeal === 2) {
+    cardsToDeal = Math.floor(gameType['gameTypeNum'] / 10);
+    for (cardsToDeal; cardsToDeal > 0; cardsToDeal--) {
+      cards['Player'].push(deck.pop(Math.floor(Math.random() * 52)));
+      cards['Dealer'].push(deck.pop(Math.floor(Math.random() * 52)));
+    }
   }
 }
 
+function validateDealType(typeOfDeal) {
+  while (true) {
+    if ([1, 2].includes(typeOfDeal)) break;
+    console.clear();
+    beforeDealDisplay();
+    prompt(`Please enter [1] for regular deal [2] for bonus deal (More Cards)`);
+    typeOfDeal = Number(readline.question());
+  }
+  return typeOfDeal;
+}
 function displayCards() {
   console.clear();
   displayHiddenStats();
-
-  prompt(`Dealer has [?] and [${cards['Dealer'][1][1]}].`);
-  prompt(`You have [${cards['Player'][0][1]}] and [${cards['Player'][1][1]}]`);
+  displayDealersCards();
+  displayPlayerCards();
   prompt('Press [ENTER] to continue.');
   readline.question();
 }
@@ -161,15 +195,44 @@ function dealerTotalsOutput(count) {
 
 function revealCards() {
   displayGameStats();
+  cards['reveal'] = true;
   if (busted(cards['Player'])) {
     prompt("Player: Busted!");
-    prompt(`Dealer had ${cards['Dealer'][0][1]} and ${cards['Dealer'][1][1]}`);
+    displayDealersCards();
     readline.question();
   } else {
-    prompt(`Dealer has ${cards['Dealer'][0][1]} and ${cards['Dealer'][1][1]}`);
+    displayDealersCards();
     prompt('Press [ENTER] to continue.');
     readline.question();
   }
+}
+
+function displayDealersCards() {
+  let string = '[?]';
+  if (cards['reveal'] === false) {
+    for (let count = 1; count < cards['Dealer'].length; count++) {
+      string += ` [${cards['Dealer'][count][1]}]`;
+    }
+    prompt(`Dealer has ${string}`);
+  } else if (cards['reveal'] === true) {
+    let string = '';
+    for (let count = 0; count < cards['Dealer'].length; count++) {
+      string += ` [${cards['Dealer'][count][1]}]`;
+    }
+    if (busted(cards['Player'])) {
+      prompt(`Dealer had ${string}`);
+    } else {
+      prompt(`Dealer has ${string}`);
+    }
+  }
+}
+
+function displayPlayerCards() {
+  let string = ' ';
+  for (let count = 0; count < cards['Player'].length; count++) {
+    string += ` [${cards['Player'][count][1]}]`;
+  }
+  prompt(`You have ${string}`);
 }
 
 function correctAnswerHitOrStay(hitOrStay) {
@@ -320,7 +383,7 @@ function playAgain() {
   simpleDisplay();
   prompt('Would you like to play again? (y or n)');
   playOrNo = readline.question().trim().toLowerCase();
-  playOrNo = incorrectAnswerLoop(playOrNo);
+  playOrNo = validatePlayAgainAnswer(playOrNo);
   if (playOrNo[0] === 'y') {
     theBool = true;
   } else if (playOrNo[0] === 'n') {
@@ -330,7 +393,7 @@ function playAgain() {
   return theBool;
 }
 
-function incorrectAnswerLoop(playOrNo) {
+function validatePlayAgainAnswer(playOrNo) {
   while (!Object.values(answers).flat().includes(playOrNo)) {
     // console.clear();
     console.clear();
@@ -352,9 +415,15 @@ function incorrectAnswerLoop(playOrNo) {
 function resetGame() {
   cards['Dealer'].length = 0;
   cards['Player'].length = 0;
-  totals.player = [];
-  totals.dealer = [];
+  totals['player'] = 0;
+  totals['dealer'] = 0;
   match['count'] = 5;
+  gameType['gameTypeNum'] = 21;
+}
+function resetMatch() {
+  cards['Dealer'].length = 0;
+  cards['Player'].length = 0;
+  cards['reveal'] = false;
 }
 
 function updateTotals() {
@@ -473,7 +542,7 @@ function rulePrompt3() {
   console.log(`          Press [Enter] to continue`);
   readline.question();
 }
-function rulePrompt4() {
+function rulePrompt5() {
   console.clear();
   console.log("         _______May          _____ ");
   console.log("        //||||||\\the        ///||| ");
@@ -488,12 +557,28 @@ function rulePrompt4() {
   console.log(`          Press [Enter] to continue`);
   readline.question();
 }
+function rulePrompt4() {
+  console.clear();
+  console.log("         _______             _____ ");
+  console.log("        //||||||\\           ///||| ");
+  console.log('       |||   \\\\\\\\\\         ////||| ');
+  console.log("       |||   |////        ////|||| ");
+  console.log("             //// Bonus deals |||| ");
+  console.log("            ////   will give  |||| ");
+  console.log("          ////  more cards for ||| ");
+  console.log("        /////| the first hand |||| ");
+  console.log("       |||||||||||||      ||||||||||||| ");
+  console.log('');
+  console.log(`          Press [Enter] to continue`);
+  readline.question();
+}
 
-function displayRules(gameType) {
-  rulePrompt1(gameType);
+function displayRules() {
+  rulePrompt1();
   rulePrompt2();
   rulePrompt3();
   rulePrompt4();
+  rulePrompt5();
 }
 function goodbyePrompts() {
   console.clear();
@@ -526,7 +611,7 @@ function matchWinnerPrompt(matchWinner) {
     console.log('');
     console.log("Press [Enter] to continue.");
     readline.question();
-  } else if (match['count'] === 1) {
+  } else if (matchWinner === 'Tie' && match['count'] === 0) {
     displayTie();
   }
 }
@@ -555,25 +640,26 @@ function chooseGameType() {
   prompt(`enter 31, 41, 51.`);
   prompt(`Press [ENTER] for default`);
   gameTypeChoice = readline.question();
-  gameTypeChoice = incorrectGameTypeLoop(gameTypeChoice);
-  gameType['gameTypeNum'] = gameTypeChoice;
+  validateGameType(gameTypeChoice);
+
   return gameTypeChoice;
 }
 
-function incorrectGameTypeLoop(gameTypeChoice) {
-  gameType['gameTypeNum'] = Number(gameTypeChoice);
+function validateGameType(gameTypeChoice) {
+  if (gameTypeChoice === '') {
+    gameTypeChoice = 21;
+  }
   while (![21, 31, 41, 51].includes(Number(gameTypeChoice))) {
     helloPrompt();
-    gameTypeChoice = Number(gameTypeChoice);
     if (gameTypeChoice === '') {
-      gameType['gameTypeNum'] = 21;
+      gameTypeChoice = 21;
       break;
     }
     prompt(`Please enter 31, 41 or 51 for your game type.`);
     prompt('Press [ENTER] for default');
-    gameTypeChoice = Number(readline.question());
+    gameTypeChoice = readline.question();
   }
-  gameType['gameTypeNum'] = gameTypeChoice;
+  gameType['gameTypeNum'] = Number(gameTypeChoice);
   return gameTypeChoice;
 }
 
@@ -628,12 +714,14 @@ function whoIsTheMatchWinner(matchWinner) {
 function winnerCalcAndDisplay() {
   let winner = nameWinner();
   let matchWinner;
+  match['count'] -= 1;
   countScores(winner);
   winningDisplay(winner);
   congratulateWinner(winner);
   checkMatchWin();
   matchWinner = whoIsTheMatchWinner(matchWinner);
   matchWinnerPrompt(matchWinner);
+  resetMatch();
 }
 
 function chooseGameDisplayRules() {
@@ -652,9 +740,7 @@ function singleGameLoop() {
     revealCards();
     updateTotals();
     dealerHits(deck);
-    match['count'] -= 1;
     winnerCalcAndDisplay();
-    resetGame();
   }
 }
 function playTotalGame() {
@@ -666,7 +752,6 @@ function playTotalGame() {
       break;
     } else {
       resetGame();
-      match['count'] = [];
     }
   }
 }
